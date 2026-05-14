@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Law Edu Kit - Smart Digital Citizenship</title>
+    <!-- Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .animate-fade { animation: fadeIn 0.3s ease-out; }
+        .animate-slide { animation: slideUp 0.4s ease-out; }
+        .animate-scale { animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        .phone-container {
+            height: 90vh;
+            width: 100%;
+            max-width: 420px;
+            background: white;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            border-radius: 40px;
+            overflow: hidden;
+            border: 8px solid #1e293b;
+        }
+
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .materi-card:active { transform: scale(0.97); }
+        .option-btn:active { transform: scale(0.98); }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- Lucide Icon Wrapper ---
+        const Icon = ({ name, size = 20, className = "", strokeWidth = 2.5 }) => {
+            useEffect(() => {
+                if (window.lucide) window.lucide.createIcons();
+            }, [name]);
+            return <i data-lucide={name} className={className} style={{ width: size, height: size }}></i>;
+        };
+
+        // --- Data ---
+        const MATERI_DATA = [
+            { 
+                id: 'privasi', 
+                title: 'Privasi & Data Pribadi', 
+                desc: 'Lindungi identitas digital Anda dari pencurian data.',
+                content: 'Data pribadi seperti alamat, nomor telepon, dan lokasi tidak boleh sembarangan dibagikan. Gunakan autentikasi dua faktor (2FA) dan periksa izin aplikasi secara berkala.',
+                icon: 'lock', 
+                color: 'bg-blue-500',
+                light: 'bg-blue-50'
+            },
+            { 
+                id: 'bullying', 
+                title: 'Cyberbullying', 
+                desc: 'Kenali tanda perundungan digital dan cara melawannya.',
+                content: 'Cyberbullying mencakup pelecehan, ancaman, atau penghinaan di media sosial. Jika mengalaminya: Jangan balas, blokir pelaku, simpan bukti (screenshot), dan lapor ke pihak berwajib.',
+                icon: 'message-circle', 
+                color: 'bg-rose-500',
+                light: 'bg-rose-50'
+            },
+            { 
+                id: 'ite', 
+                title: 'Pasal Utama UU ITE', 
+                desc: 'Hati-hati dengan jempolmu, hukum siber itu nyata.',
+                content: 'Pasal 27 (Pencemaran Nama Baik), Pasal 28 (Penyebaran Hoaks & SARA), dan Pasal 29 (Ancaman Kekerasan) adalah pilar hukum internet di Indonesia yang wajib ditaati.',
+                icon: 'alert-triangle', 
+                color: 'bg-amber-500',
+                light: 'bg-amber-50'
+            },
+            { 
+                id: 'copyright', 
+                title: 'Etika Hak Cipta', 
+                desc: 'Cara menggunakan karya orang lain secara legal.',
+                content: 'Selalu cantumkan sumber jika menggunakan foto/tulisan orang lain. Hindari plagiarisme dan hargai lisensi Creative Commons untuk konten digital.',
+                icon: 'copyright', 
+                color: 'bg-emerald-500',
+                light: 'bg-emerald-50'
+            }
+        ];
+
+        const KUIS_DATA = [
+            {
+                q: "Data manakah yang PALING berisiko jika dibagikan ke publik?",
+                options: ["Nama Lengkap", "Foto Makanan", "Foto KTP & Alamat Rumah", "Judul Film Favorit"],
+                correct: 2
+            },
+            {
+                q: "Apa yang harus dilakukan pertama kali saat melihat hoaks?",
+                options: ["Langsung bagikan", "Laporkan (Report) & verifikasi", "Diamkan saja", "Komentari dengan marah"],
+                correct: 1
+            },
+            {
+                q: "Sanksi penyebaran berita bohong (hoaks) diatur dalam...",
+                options: ["UU Hak Cipta", "UU ITE", "KUHP Pencurian", "Peraturan Sekolah"],
+                correct: 1
+            }
+        ];
+
+        const SIMULASI_KASUS = [
+            {
+                situation: "Seorang asing mengirimkan link 'Hadiah iPhone' di DM kamu. Apa tindakanmu?",
+                options: [
+                    { text: "Klik link untuk cek kebenaran", correct: false, feedback: "Bahaya! Ini adalah teknik Phishing untuk mencuri akunmu." },
+                    { text: "Abaikan dan hapus pesan", correct: true, feedback: "Tepat! Jangan pernah klik link mencurigakan dari orang asing." }
+                ]
+            }
+        ];
+
+        // --- Main App Component ---
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('home');
+            const [selectedMateri, setSelectedMateri] = useState(null);
+            
+            // Kuis State
+            const [kuisIndex, setKuisIndex] = useState(0);
+            const [score, setScore] = useState(0);
+            const [kuisFinished, setKuisFinished] = useState(false);
+            const [userAnswer, setUserAnswer] = useState(null);
+
+            // Simulasi State
+            const [simResult, setSimResult] = useState(null);
+
+            const resetKuis = () => {
+                setKuisIndex(0);
+                setScore(0);
+                setKuisFinished(false);
+                setUserAnswer(null);
+            };
+
+            const handleAnswer = (idx) => {
+                setUserAnswer(idx);
+                if (idx === KUIS_DATA[kuisIndex].correct) setScore(s => s + 1);
+                
+                setTimeout(() => {
+                    if (kuisIndex < KUIS_DATA.length - 1) {
+                        setKuisIndex(k => k + 1);
+                        setUserAnswer(null);
+                    } else {
+                        setKuisFinished(true);
+                    }
+                }, 1000);
+            };
+
+            // Views
+            const HomeView = () => (
+                <div className="space-y-6 animate-fade">
+                    {/* Hero */}
+                    <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[32px] p-6 text-white relative overflow-hidden shadow-xl shadow-blue-200/50">
+                        <div className="relative z-10">
+                            <span className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">Edisi 2024</span>
+                            <h2 className="text-2xl font-extrabold mt-3 leading-tight">Menjadi Warga<br/>Digital yang Cerdas</h2>
+                            <p className="text-blue-100 text-xs mt-2 opacity-90 leading-relaxed max-w-[200px]">Pelajari hukum internet & etika siber dalam satu genggaman.</p>
+                            <button 
+                                onClick={() => setActiveTab('materi')}
+                                className="mt-6 bg-white text-blue-700 px-6 py-2.5 rounded-2xl font-bold text-xs flex items-center gap-2 active:scale-95 transition-all shadow-lg"
+                            >
+                                Mulai Sekarang <Icon name="arrow-right" size={14} />
+                            </button>
+                        </div>
+                        <div className="absolute -right-6 -bottom-6 opacity-20">
+                            <Icon name="shield-check" size={160} />
+                        </div>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-3xl">
+                            <div className="bg-emerald-500 w-8 h-8 rounded-xl flex items-center justify-center text-white mb-2">
+                                <Icon name="check-circle" size={18} />
+                            </div>
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase">Aktivitas</p>
+                            <p className="text-lg font-black text-slate-800">4 Modul</p>
+                        </div>
+                        <div className="bg-orange-50 border border-orange-100 p-4 rounded-3xl">
+                            <div className="bg-orange-500 w-8 h-8 rounded-xl flex items-center justify-center text-white mb-2">
+                                <Icon name="zap" size={18} />
+                            </div>
+                            <p className="text-[10px] font-bold text-orange-600 uppercase">XP Poin</p>
+                            <p className="text-lg font-black text-slate-800">1,250</p>
+                        </div>
+                    </div>
+
+                    {/* Featured */}
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="font-black text-slate-800 text-sm uppercase tracking-tight">Materi Pilihan</h3>
+                            <button onClick={() => setActiveTab('materi')} className="text-blue-600 text-[10px] font-bold">Lihat Semua</button>
+                        </div>
+                        <div className="space-y-3">
+                            {MATERI_DATA.slice(0, 2).map((m) => (
+                                <div key={m.id} onClick={() => { setSelectedMateri(m); setActiveTab('materi-detail'); }} className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-all">
+                                    <div className={`${m.light} ${m.color.replace('bg-', 'text-')} p-3 rounded-2xl`}>
+                                        <Icon name={m.icon} size={22} />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="font-bold text-slate-800 text-sm">{m.title}</h4>
+                                        <p className="text-[10px] text-slate-400 line-clamp-1">{m.desc}</p>
+                                    </div>
+                                    <Icon name="chevron-right" size={16} className="text-slate-300" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            const MateriListView = () => (
+                <div className="space-y-4 animate-slide">
+                    <h2 className="text-xl font-black text-slate-900 uppercase mb-2">Daftar Materi</h2>
+                    {MATERI_DATA.map((m) => (
+                        <div key={m.id} onClick={() => { setSelectedMateri(m); setActiveTab('materi-detail'); }} className="bg-white p-5 rounded-[32px] border border-slate-100 flex items-center gap-4 shadow-sm hover:border-blue-200 transition-colors cursor-pointer">
+                            <div className={`${m.light} ${m.color.replace('bg-', 'text-')} p-4 rounded-[22px]`}>
+                                <Icon name={m.icon} size={26} />
+                            </div>
+                            <div className="flex-1">
+                                <h4 className="font-bold text-slate-800 text-sm uppercase">{m.title}</h4>
+                                <p className="text-[11px] text-slate-500 mt-1 leading-snug">{m.desc}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            );
+
+            const MateriDetailView = () => (
+                <div className="animate-scale">
+                    <button onClick={() => setActiveTab('materi')} className="mb-6 flex items-center gap-2 text-slate-400 font-bold text-xs">
+                        <Icon name="arrow-left" size={14} /> Kembali
+                    </button>
+                    <div className={`${selectedMateri.light} p-8 rounded-[40px] flex justify-center mb-6`}>
+                        <Icon name={selectedMateri.icon} size={80} className={selectedMateri.color.replace('bg-', 'text-')} />
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-900 leading-tight mb-4">{selectedMateri.title}</h2>
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6 italic text-blue-700 text-xs leading-relaxed">
+                        "{selectedMateri.desc}"
+                    </div>
+                    <p className="text-slate-600 text-sm leading-loose">
+                        {selectedMateri.content}
+                    </p>
+                    <div className="mt-10 p-6 bg-slate-900 rounded-[32px] text-white">
+                        <h4 className="font-bold text-sm mb-2">💡 Tips Cerdas</h4>
+                        <p className="text-[11px] opacity-80 leading-relaxed">Selalu berpikir sebelum mengklik link atau membagikan berita yang belum tentu kebenarannya.</p>
+                    </div>
+                </div>
+            );
+
+            const KuisView = () => {
+                const current = KUIS_DATA[kuisIndex];
+                if (kuisFinished) {
+                    return (
+                        <div className="flex flex-col items-center justify-center py-10 animate-scale text-center">
+                            <div className="w-40 h-40 bg-blue-600 rounded-full flex flex-col items-center justify-center text-white shadow-2xl mb-8 border-[10px] border-blue-50">
+                                <span className="text-4xl font-black">{Math.round((score/KUIS_DATA.length)*100)}</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-70">Skor Akhir</span>
+                            </div>
+                            <h2 className="text-2xl font-black text-slate-900 mb-2">KERJA BAGUS!</h2>
+                            <p className="text-slate-500 text-xs px-10 leading-relaxed mb-10">Kamu telah menyelesaikan tantangan Hukum Digital hari ini.</p>
+                            <button onClick={resetKuis} className="bg-slate-900 text-white w-full py-4 rounded-2xl font-bold active:scale-95 transition-all">Ulangi Kuis</button>
+                        </div>
+                    );
+                }
+                return (
+                    <div className="animate-fade">
+                        <div className="flex justify-between items-center mb-6">
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Pertanyaan {kuisIndex + 1}/{KUIS_DATA.length}</span>
+                            <div className="h-1 w-24 bg-slate-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-600 transition-all" style={{ width: `${((kuisIndex + 1)/KUIS_DATA.length)*100}%` }}></div>
+                            </div>
+                        </div>
+                        <div className="bg-slate-50 p-6 rounded-[32px] mb-8 min-h-[120px] flex items-center">
+                            <h3 className="text-lg font-bold text-slate-800 leading-tight">{current.q}</h3>
+                        </div>
+                        <div className="space-y-3">
+                            {current.options.map((opt, i) => (
+                                <button 
+                                    key={i}
+                                    disabled={userAnswer !== null}
+                                    onClick={() => handleAnswer(i)}
+                                    className={`option-btn w-full p-4 rounded-2xl border-2 text-left text-xs font-bold transition-all flex items-center gap-3
+                                        ${userAnswer === null ? 'border-slate-100 bg-white hover:border-blue-200' : 
+                                          i === current.correct ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 
+                                          userAnswer === i ? 'border-rose-500 bg-rose-50 text-rose-700' : 'border-slate-50 bg-slate-50 text-slate-300'}
+                                    `}
+                                >
+                                    <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-[10px]
+                                        ${userAnswer === null ? 'bg-slate-100 text-slate-400' : 
+                                          i === current.correct ? 'bg-emerald-500 text-white' : 
+                                          userAnswer === i ? 'bg-rose-500 text-white' : 'bg-slate-200 text-white'}
+                                    `}>{String.fromCharCode(65 + i)}</span>
+                                    {opt}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
+            const SimulasiView = () => (
+                <div className="space-y-6 animate-slide">
+                    <h2 className="text-xl font-black text-slate-900 uppercase">Simulasi Kasus</h2>
+                    <div className="bg-emerald-50 rounded-[32px] p-6 border border-emerald-100 relative overflow-hidden">
+                        <div className="relative z-10">
+                            <h4 className="text-[10px] font-black text-emerald-600 uppercase mb-2 tracking-widest">Skenario #1</h4>
+                            <p className="text-sm font-bold text-slate-800 leading-relaxed mb-6">{SIMULASI_KASUS[0].situation}</p>
+                            
+                            {!simResult ? (
+                                <div className="space-y-3">
+                                    {SIMULASI_KASUS[0].options.map((opt, i) => (
+                                        <button 
+                                            key={i} 
+                                            onClick={() => setSimResult(opt)}
+                                            className="w-full bg-white p-4 rounded-2xl text-xs font-extrabold text-slate-700 shadow-sm active:scale-95 transition-all border-b-4 border-slate-200"
+                                        >
+                                            {opt.text}
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className={`animate-scale p-5 rounded-2xl ${simResult.correct ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}`}>
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Icon name={simResult.correct ? 'check-circle' : 'x-circle'} size={20} />
+                                        <span className="font-black text-xs uppercase">{simResult.correct ? 'Benar!' : 'Kurang Tepat'}</span>
+                                    </div>
+                                    <p className="text-[11px] font-bold opacity-80 leading-relaxed mb-4">{simResult.feedback}</p>
+                                    <button onClick={() => setSimResult(null)} className="text-[10px] underline font-black uppercase">Coba Lagi</button>
+                                </div>
+                            )}
+                        </div>
+                        <div className="absolute -right-6 -bottom-6 opacity-10">
+                            <Icon name="help-circle" size={120} />
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="phone-container flex flex-col shadow-2xl">
+                    {/* Top Bar (iOS Style) */}
+                    <div className="px-8 pt-4 pb-2 flex justify-between items-center text-[10px] font-black tracking-tighter text-slate-400">
+                        <span>9:41</span>
+                        <div className="flex gap-1.5">
+                            <Icon name="signal" size={12} />
+                            <Icon name="wifi" size={12} />
+                            <Icon name="battery" size={12} />
+                        </div>
+                    </div>
+
+                    {/* Header */}
+                    <header className="px-6 py-4 flex justify-between items-center bg-white z-20">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-blue-600 w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                                <Icon name="scale" size={20} />
+                            </div>
+                            <div>
+                                <h1 className="text-xs font-black text-slate-900 uppercase tracking-tighter">Law Edu Kit</h1>
+                                <p className="text-[8px] text-blue-500 font-bold uppercase tracking-widest">Smart Citizen</p>
+                            </div>
+                        </div>
+                        <button className="p-2.5 bg-slate-50 text-slate-400 rounded-xl">
+                            <Icon name="user" size={18} />
+                        </button>
+                    </header>
+
+                    {/* Main Content */}
+                    <main className="flex-1 overflow-y-auto px-6 pt-2 pb-28 hide-scrollbar">
+                        {activeTab === 'home' && <HomeView />}
+                        {activeTab === 'materi' && <MateriListView />}
+                        {activeTab === 'materi-detail' && <MateriDetailView />}
+                        {activeTab === 'kuis' && <KuisView />}
+                        {activeTab === 'simulasi' && <SimulasiView />}
+                    </main>
+
+                    {/* Navbar */}
+                    <nav className="glass-nav absolute bottom-0 left-0 right-0 p-4 pb-8 flex justify-around items-center border-t border-slate-100 z-30">
+                        {[
+                            { id: 'home', icon: 'home', label: 'Home' },
+                            { id: 'materi', icon: 'book-open', label: 'Materi' },
+                            { id: 'simulasi', icon: 'zap', label: 'Kasus' },
+                            { id: 'kuis', icon: 'award', label: 'Kuis' },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => {
+                                    setActiveTab(tab.id);
+                                    if (tab.id === 'kuis') resetKuis();
+                                }}
+                                className={`flex flex-col items-center gap-1.5 flex-1 transition-all ${
+                                    activeTab === tab.id || (tab.id === 'materi' && activeTab === 'materi-detail') 
+                                    ? 'text-blue-600 scale-110' : 'text-slate-400'
+                                }`}
+                            >
+                                <Icon name={tab.icon} size={20} strokeWidth={activeTab === tab.id ? 3 : 2} />
+                                <span className="text-[8px] font-black uppercase tracking-widest">{tab.label}</span>
+                            </button>
+                        ))}
+                    </nav>
+
+                    {/* Home Indicator */}
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1.5 bg-slate-200 rounded-full z-40"></div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
